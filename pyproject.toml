@@ -21,6 +21,7 @@ prometheus-async = "^22.2.0"
 psycopg2-binary = "^2.9.9"
 dramatiq-apscheduler = "^0.2.1"
 asyncpg = "^0.29.0"
+starlette-exporter = "^0.20.0"
 
 
 [tool.poetry.group.dev.dependencies]

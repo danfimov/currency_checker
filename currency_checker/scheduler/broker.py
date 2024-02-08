@@ -9,6 +9,7 @@ from dramatiq import Worker
 from currency_checker.infrastructure.logging import configure_logging
 from currency_checker.infrastructure.settings import Settings
 from currency_checker.scheduler.jobs import redis_broker
+from currency_checker.scheduler.utils import run_metrics_server
 
 
 logger = getLogger(__name__)
@@ -32,6 +33,7 @@ if __name__ == '__main__':
         path_to_log_config=Path.cwd() / settings.log.config_path,
         root_level=settings.log.level,
     )
+    metrics_server = run_metrics_server(settings.broker_metrics_port)
     logger.debug('Starting workers...')
     workers = Worker(redis_broker, worker_threads=8)
     workers.start()

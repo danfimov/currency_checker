@@ -41,6 +41,7 @@ RUN poetry install --no-interaction --no-ansi --without dev
 USER root
 
 EXPOSE 8000/tcp
+EXPOSE 8001/tcp
 
 ENTRYPOINT ["docker/entrypoint"]
 CMD $START_COMMAND

@@ -9,6 +9,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from currency_checker.infrastructure.logging import configure_logging
 from currency_checker.infrastructure.settings import Settings
 from currency_checker.scheduler.jobs import binance_get_currency_rates, coingeko_get_currency_rates
+from currency_checker.scheduler.utils import run_metrics_server
 
 
 logger = getLogger(__name__)
@@ -40,6 +41,7 @@ if __name__ == "__main__":
         path_to_log_config=settings.log.config_path,
         root_level=settings.log.level,
     )
+    metrics_server = run_metrics_server(settings.scheduler_metrics_port)
 
     job_stores = {
         'default': RedisJobStore(
@@ -49,12 +51,12 @@ if __name__ == "__main__":
         )
     }
     scheduler = BlockingScheduler(jobstores=job_stores)
-    # scheduler.add_job(
-    #     func=scheduled_task_binance,
-    #     trigger='interval',
-    #     seconds=settings.binance_scheduler.interval,
-    #     start_date=datetime.now()
-    # )
+    scheduler.add_job(
+        func=scheduled_task_binance,
+        trigger='interval',
+        seconds=settings.binance_scheduler.interval,
+        start_date=datetime.now()
+    )
     scheduler.add_job(
         scheduled_task_coingeko,
         trigger='interval',

@@ -39,7 +39,7 @@ up:  ##@AApplication Create databases and app containers with docker-compose
 	docker-compose -f docker-compose.yml up -d --remove-orphans
 
 migrate:  ##@Database Create database with docker-compose
-	cd currency_checker/migrator && poetry run python3 main.py upgrade head
+	cd currency_checker/infrastructure/migrations && poetry run alembic upgrade head
 
 revision:  ##@Database Create database with docker-compose
 	cd currency_checker/migrator && poetry run python3 main.py revision --autogenerate --message $(args)
