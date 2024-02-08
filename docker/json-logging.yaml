@@ -1,0 +1,28 @@
+version: 1
+disable_existing_loggers: False
+
+formatters:
+  json:
+    class: currency_checker.infrastructure.logging.JsonFormatter
+    format: '%(name)s %(module)s %(lineno)s %(pathname)s %(args)s %(msg)s %(funcName)s'
+
+filters:
+  ping_filter:
+    (): currency_checker.infrastructure.logging.UvicornAccessLogFilter
+    path: /ping
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    formatter: json
+    stream: ext://sys.stdout
+
+root:
+  level: INFO
+  handlers:
+    - console
+
+loggers:
+  uvicorn.access:
+    filters:
+      - ping_filter

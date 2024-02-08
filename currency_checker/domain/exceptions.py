@@ -1,0 +1,2 @@
+class AccountsNotFound(Exception):
+    pass

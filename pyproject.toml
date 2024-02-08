@@ -1,0 +1,102 @@
+[tool.poetry]
+name = "currency-checker"
+version = "0.1.0"
+description = ""
+authors = ["Anfimov Dima <danfimov@yandex-team.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+alembic = "^1.13.1"
+sqlalchemy = "^2.0.25"
+pydantic = {version = "1.10.13", extras = ["dotenv"]}
+fastapi = "^0.109.2"
+aiohttp = "^3.9.3"
+uvicorn = "^0.27.0.post1"
+python-json-logger = "^2.0.7"
+dramatiq = {version="*", extras=["redis", "watch", "gevent"]}
+apscheduler = "^3.10.4"
+pyyml = "^0.0.2"
+prometheus-async = "^22.2.0"
+psycopg2-binary = "^2.9.9"
+dramatiq-apscheduler = "^0.2.1"
+asyncpg = "^0.29.0"
+
+
+[tool.poetry.group.dev.dependencies]
+asyncpg-stubs = "^0.29.1"
+mypy = "^1.7.1"
+pytest = "^7.4.3"
+pytest-asyncio = "^0.23.2"
+pytest-cov = "^4.1.0"
+ruff = "^0.2.1"
+requests = "^2.31.0"
+types-pyyaml = "^6.0.12.12"
+types-psycopg2 = "^2.9.21.20240201"
+types-pyopenssl = "^24.0.0.20240130"
+types-requests = "^2.31.0.20240125"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+
+[tool.ruff.lint.isort]
+known-local-folder = ["currency_checker"]
+lines-after-imports = 2
+
+
+[tool.ruff.lint]
+ignore = []
+select = ["E", "F", "I001"]
+
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+no_implicit_optional = true
+plugins = ["sqlalchemy.ext.mypy.plugin"]
+
+
+[tool.pytest]
+python_files = "test_*.py"
+python_classes = ["*Test", "Test*"]
+python_functions = "test_*"
+testpaths = "tests/"
+
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+markers = [
+    "integration: marks tests with real infrastructure env",
+    "linting: marks tests as linter/static analyzers",
+]
+
+
+[tool.coverage.report]
+exclude_lines = [
+    "# pragma: no cover",
+    "def __repr__",
+    "def __str__",
+    "def __unicode__",
+]
+show_missing = true
+skip_empty = true
+omit = []
+
+
+[tool.coverage.html]
+directory = "pytest-cov-report"
+
+
+[tool.coverage.run]
+branch = true
+concurrency = ['thread', 'greenlet']

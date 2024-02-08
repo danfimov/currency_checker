@@ -1,0 +1,55 @@
+version: '3.4'
+
+services:
+  redis:
+    container_name: currency_checker_redis
+    image: redis:6
+    env_file:
+      - conf/.env
+    ports:
+      - "6379:6379"
+  postgres:
+    container_name: currency_checker_postgres
+    image: postgres:14
+    ports:
+      - 5432:5432
+    env_file:
+      - conf/.env
+    environment:
+      POSTGRES_USER: ${POSTGRES__USER:-currency_checker}
+      POSTGRES_PASSWORD: ${POSTGRES__PASSWORD:-currency_checker}
+      POSTGRES_DB: ${POSTGRES__DATABASE:-currency_checker}
+  api:
+    container_name: currency_checker_api
+    image: cr.yandex/crph9f0poag6rukqpuci/cinemabot:latest
+    env_file:
+      - conf/.env
+    volumes:
+      - ./currency_checker:/app/currency_checker
+      - venv:/app/.venv
+    ports:
+      - "8000:8000"
+    environment:
+      RUN_MIGRATIONS_ON_STARTUP: 1
+    command: ["poetry", "run", "uvicorn", "currency_checker.api.__main__:app", "--host", "", "--port=8000"]
+  scheduler:
+    container_name: currency_checker_scheduler
+    image: cr.yandex/crph9f0poag6rukqpuci/cinemabot:latest
+    env_file:
+      - conf/.env
+    volumes:
+      - ./currency_checker:/app/currency_checker
+      - venv:/app/.venv
+    command: ["poetry", "run", "python3", "-m", "currency_checker.scheduler"]
+  broker:
+    container_name: currency_checker_broker
+    image: cr.yandex/crph9f0poag6rukqpuci/cinemabot:latest
+    env_file:
+      - conf/.env
+    volumes:
+      - ./currency_checker:/app/currency_checker
+      - venv:/app/.venv
+    command: ["poetry", "run", "python3", "-m", "currency_checker.scheduler.broker"]
+
+volumes:
+  venv:
