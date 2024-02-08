@@ -1,3 +1,4 @@
+import asyncio
 import signal
 from datetime import datetime
 from logging import getLogger
@@ -6,14 +7,17 @@ from types import FrameType
 from apscheduler.jobstores.redis import RedisJobStore
 from apscheduler.schedulers.blocking import BlockingScheduler
 
+from currency_checker.domain.storages.accounts import AbstractAccountStorage, PostgresAccountStorage
 from currency_checker.infrastructure.logging import configure_logging
 from currency_checker.infrastructure.settings import Settings
+from currency_checker.scheduler.exceptions import ConfigurationException
 from currency_checker.scheduler.jobs import binance_get_currency_rates, coingeko_get_currency_rates
 from currency_checker.scheduler.utils import run_metrics_server
 
 
 logger = getLogger(__name__)
 scheduler: BlockingScheduler | None = None
+account_storage: AbstractAccountStorage | None = None
 
 
 def sigterm_handler(_signal: int, _frame: FrameType | None) -> None:
@@ -32,7 +36,10 @@ def scheduled_task_binance() -> None:
 
 
 def scheduled_task_coingeko() -> None:
-    coingeko_get_currency_rates.send()
+    if account_storage is None:
+        raise ConfigurationException("Account storage is not initialized")
+    account = account_storage.get_active_account('coingeko')
+    coingeko_get_currency_rates.send(account.token)
 
 
 if __name__ == "__main__":
@@ -57,6 +64,9 @@ if __name__ == "__main__":
         seconds=settings.binance_scheduler.interval,
         start_date=datetime.now()
     )
+
+    account_storage = PostgresAccountStorage(settings.postgres)
+    asyncio.run(account_storage.cache_all_active_accounts('coingeko'))
     scheduler.add_job(
         scheduled_task_coingeko,
         trigger='interval',

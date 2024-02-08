@@ -16,11 +16,11 @@ class AbstractCurrencyStorage(ABC):
 
 
 class RedisCurrencyStorage(AbstractCurrencyStorage):
-    def __init__(self, redis_settings: RedisSettings, key_prefix: str = '') -> None:
+    def __init__(self, settings: RedisSettings, key_prefix: str = '') -> None:
         self.redis = Redis(
-            host=redis_settings.host,
-            port=redis_settings.port,
-            db=redis_settings.database,
+            host=settings.host,
+            port=settings.port,
+            db=settings.database,
         )
         self.key_prefix = key_prefix
 

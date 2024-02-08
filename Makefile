@@ -1,5 +1,9 @@
 args := $(wordlist 2, 100, $(MAKECMDGOALS))
 
+ifeq ($(wildcard "conf/.env"),)
+	include conf/.env
+endif
+
 APPLICATION_NAME = currency_checker
 
 HELP_FUN = \
@@ -31,7 +35,6 @@ run_api:  ##@Application Run api
 
 run_scheduler:  ##@Application Run scheduler
 	poetry run python3 -m currency_checker.scheduler
-
 run_worker:  ##@Application Run workers
 	poetry run python3 -m currency_checker.scheduler.broker
 
@@ -42,7 +45,7 @@ migrate:  ##@Database Create database with docker-compose
 	cd currency_checker/infrastructure/migrations && poetry run alembic upgrade head
 
 revision:  ##@Database Create database with docker-compose
-	cd currency_checker/migrator && poetry run python3 main.py revision --autogenerate --message $(args)
+	cd currency_checker/infrastructure/migrations && poetry run alembic revision --autogenerate --message $(args)
 
 test:  ##@Testing Test application with pytest
 	make db && $(TEST)
@@ -64,19 +67,19 @@ build:  ##@Docker Build docker container with bot
 	docker build  --platform linux/amd64 -f Dockerfile -t currency_checker:latest .
 
 tag:  ##@Docker Create tag on local bot container
-	docker tag currency_checker cr.yandex/crph9f0poag6rukqpuci/currency_checker:latest
+	docker tag currency_checker cr.yandex/$(CLOUD__REGISTRY_ID)/currency_checker:latest
 
 push:  ##@Docker Push container with bot to registry
-	docker push cr.yandex/crph9f0poag6rukqpuci/currency_checker:latest
+	docker push cr.yandex/$(CLOUD__REGISTRY_ID)/currency_checker:latest
 
-deploy:  ##@Deploy Create vm with docker-compose
+deploy:  ##@Deploy Create vm with docker-compose (change to your credentials first)
 	yc compute instance create-with-container \
   --name currency_checker-vm \
   --zone ru-central1-a \
   --ssh-key ~/.ssh/id_ed25519.pub \
   --create-boot-disk size=30 \
   --network-interface subnet-name=defult-ru-central1-a,nat-ip-version=ipv4 \
-  --service-account-name danfimov \
+  --service-account-name $(CLOUD__ACCOUNT_NAME) \
   --docker-compose-file docker-compose.cloud.yaml
 
 %::

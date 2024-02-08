@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from itertools import cycle
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
@@ -11,7 +12,11 @@ from currency_checker.infrastructure.settings import PostgresSettings
 
 class AbstractAccountStorage(ABC):
     @abstractmethod
-    async def get_active_account(self, source: str) -> Account:
+    async def cache_all_active_accounts(self, source: str) -> None:
+        ...
+
+    @abstractmethod
+    def get_active_account(self, source: str) -> Account:
         ...
 
 
@@ -33,10 +38,15 @@ class PostgresAccountStorage(AbstractAccountStorage):
             class_=AsyncSession
         )
 
-    async def get_active_account(self, source: str) -> Account:
+        self._active_accounts: dict[str, cycle[Account]] = {}
+
+    async def cache_all_active_accounts(self, source: str) -> None:
         session: AsyncSession = self._sessionmaker()
-        query = select(Accounts.token).where(Accounts.source == source).limit(1)
+        query = select(Accounts.token).where(Accounts.source == source, Accounts.active.is_(True))
         query_result = await session.execute(query)
         if query_result is None:
             raise AccountsNotFound
-        return Account.from_orm(query_result.fetchone())
+        self._active_accounts[source] = cycle([Account.from_orm(account) for account in query_result.fetchall()])
+
+    def get_active_account(self, source: str) -> Account:
+        return next(self._active_accounts.get(source))  # type: ignore

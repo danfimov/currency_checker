@@ -1,4 +1,4 @@
-from sqlalchemy import Column, MetaData, String, func
+from sqlalchemy import Boolean, Column, MetaData, String, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -31,9 +31,13 @@ class UIdMixin:
 
 class Accounts(Base, UIdMixin):
     __tablename__ = 'accounts'
+    __table_args__ = (
+        UniqueConstraint('token', 'source'),
+    )
 
     token = Column(String(256))
     source = Column(
         String(50),
         doc='Account source (like binance or coingecko)'
     )
+    active = Column(Boolean, default=True)

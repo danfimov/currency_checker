@@ -6,12 +6,12 @@ class WebsiteTestUser(HttpUser):
 
     @task(1)
     def ping(self):
-        self.client.get("http://localhost:8000/ping")
+        self.client.get("http://158.160.104.146:8000/ping")
 
     @task(50)
     def binance(self):
         self.client.get(
-            "http://localhost:8000/v1/courses/"
+            "http://158.160.104.146:8000/v1/courses/"
             "?exchanger=binance&directions=BTC-RUB"
             "&directions=BTC-USD&directions=ETH-RUB&directions=ETH-USD&directions=USDTTRC-RUB&directions=USDTTRC-USD"
             "&directions=USDTERC-RUB&directions=USDTERC-USD"
@@ -20,7 +20,7 @@ class WebsiteTestUser(HttpUser):
     @task(50)
     def coingeko(self):
         self.client.get(
-            "http://localhost:8000/v1/courses/"
+            "http://158.160.104.146:8000/v1/courses/"
             "?exchanger=coingeko&directions=BTC-RUB"
             "&directions=BTC-USD&directions=ETH-RUB&directions=ETH-USD&directions=USDTTRC-RUB&directions=USDTTRC-USD"
             "&directions=USDTERC-RUB&directions=USDTERC-USD"

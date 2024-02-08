@@ -12,16 +12,16 @@ class LoggingSettings(BaseModel):
 class PostgresSettings(BaseModel):
     host: str = 'postgres'
     port: int = 5432
-    user: str = 'currency_checker'
-    password: str = 'currency_checker'
-    database: str = 'currency_checker'
+    user: str
+    password: str
+    database: str
     ssl_mode: str = 'disable'
 
 
 class RedisSettings(BaseModel):
-    host: str = 'redis'
-    port: int = 6379
-    database: int = 0
+    host: str
+    port: int
+    database: int
 
 
 class SchedulerSettings(BaseModel):
@@ -31,12 +31,12 @@ class SchedulerSettings(BaseModel):
 
 
 class Settings(BaseSettings):
-    log: LoggingSettings = LoggingSettings()
-    postgres: PostgresSettings = PostgresSettings()
-    redis: RedisSettings = RedisSettings()
+    log: LoggingSettings
+    postgres: PostgresSettings
+    redis: RedisSettings
 
-    binance_scheduler: SchedulerSettings = SchedulerSettings()
-    coingeko_scheduler: SchedulerSettings = SchedulerSettings()
+    binance_scheduler: SchedulerSettings
+    coingeko_scheduler: SchedulerSettings
 
     api_metrics_port: int | None = None
     scheduler_metrics_port: int | None = None

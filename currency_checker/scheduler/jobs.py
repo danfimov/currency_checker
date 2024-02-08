@@ -5,22 +5,17 @@ import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.middleware.asyncio import AsyncIO
 
-from currency_checker.domain.api_clients.base import AbstractCurrencyClient
-from currency_checker.domain.api_clients.binance import BinanceApiClient
-from currency_checker.domain.api_clients.coingeko import CoingekoApiClient
-from currency_checker.domain.services.base import AbstractCurrencyService
-from currency_checker.domain.services.binance import BinanceService
-from currency_checker.domain.services.coingeko import CoingekoService
-from currency_checker.domain.storages.accounts import PostgresAccountStorage
+from currency_checker.domain.api_clients import AbstractCurrencyClient, BinanceApiClient, CoingekoApiClient
+from currency_checker.domain.services import AbstractCurrencyService, BinanceService, CoingekoService
 from currency_checker.domain.storages.currency import RedisCurrencyStorage
 from currency_checker.infrastructure.settings import Settings
 
 
 logger = getLogger(__name__)
-
 settings = Settings()
 
 # Set broker for scheduler process
+# Without it scheduler will start to work with AMQP instead of REdis
 redis_broker = RedisBroker(
     host=settings.redis.host,
     port=settings.redis.port,
@@ -59,8 +54,6 @@ class BinanceJob(Job):
 
 @dramatiq.actor
 async def binance_get_currency_rates() -> None:
-    settings = Settings()
-
     job = BinanceJob(
         service=BinanceService(
             RedisCurrencyStorage(settings.redis, 'binance')
@@ -69,21 +62,19 @@ async def binance_get_currency_rates() -> None:
     )
     logger.info('Job get_currency_rates started')
     await job.execute()
+    await job.client.close()
     logger.info('Job get_currency_rates ended')
 
 
 @dramatiq.actor
-async def coingeko_get_currency_rates() -> None:
-    settings = Settings()
-
-    account_storage = PostgresAccountStorage(settings.postgres)
-    account = await account_storage.get_active_account('coingeko')
+async def coingeko_get_currency_rates(api_token: str) -> None:
     job = CoingekoJob(
         service=CoingekoService(
             RedisCurrencyStorage(settings.redis, 'coingeko')
         ),
-        client=CoingekoApiClient(account.token)
+        client=CoingekoApiClient(api_token)
     )
     logger.info('Job get_currency_rates started')
     await job.execute()
+    await job.client.close()
     logger.info('Job get_currency_rates ended')

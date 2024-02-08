@@ -7,7 +7,7 @@ services:
     env_file:
       - conf/.env
     ports:
-      - "6379:6379"
+      - 6379:6379
   postgres:
     container_name: currency_checker_postgres
     image: postgres:14
@@ -27,7 +27,7 @@ services:
     volumes:
       - ./currency_checker:/app/currency_checker
     ports:
-      - "8000:8000"
+      - 8000:8000
     environment:
       RUN_MIGRATIONS_ON_STARTUP: 1
     command: ["poetry", "run", "uvicorn", "currency_checker.api.__main__:app", "--host", "", "--port=8000"]

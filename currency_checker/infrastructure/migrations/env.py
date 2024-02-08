@@ -13,7 +13,7 @@ config = context.config
 
 
 section = config.config_ini_section
-settings = Settings()
+settings = Settings(_env_file='../../../conf/.env')  # type: ignore
 config.set_section_option(section, "POSTGRES__DATABASE", settings.postgres.database)
 config.set_section_option(section, "POSTGRES__HOST", settings.postgres.host)
 config.set_section_option(section, "POSTGRES__USER", settings.postgres.user)

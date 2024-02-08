@@ -40,8 +40,8 @@ async def lifespan(application: FastAPI) -> AsyncGenerator:
 
     app_state = AppState(
         settings=settings,
-        coingeko=CoingekoService(RedisCurrencyStorage(redis_settings=settings.redis, key_prefix='coingeko')),
-        binance=BinanceService(RedisCurrencyStorage(redis_settings=settings.redis, key_prefix='binance')),
+        coingeko=CoingekoService(RedisCurrencyStorage(settings=settings.redis, key_prefix='coingeko')),
+        binance=BinanceService(RedisCurrencyStorage(settings=settings.redis, key_prefix='binance')),
         metric_server=metric_server,
     )
 
