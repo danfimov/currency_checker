@@ -26,12 +26,13 @@ services:
       - conf/.env
     volumes:
       - ./currency_checker:/app/currency_checker
-      - venv:/app/.venv
     ports:
       - "8000:8000"
     environment:
       RUN_MIGRATIONS_ON_STARTUP: 1
     command: ["poetry", "run", "uvicorn", "currency_checker.api.__main__:app", "--host", "", "--port=8000"]
+    # For better performance on local machine
+#    command: ["poetry", "run", "gunicorn", "currency_checker.api.__main__:app", "--workers", "8", "--worker-class", "uvicorn.workers.UvicornWorker", "--bind", "[::]:8000"]
   scheduler:
     container_name: currency_checker_scheduler
     build: .
@@ -39,7 +40,6 @@ services:
       - conf/.env
     volumes:
       - ./currency_checker:/app/currency_checker
-      - venv:/app/.venv
     command: ["poetry", "run", "python3", "-m", "currency_checker.scheduler"]
   broker:
     container_name: currency_checker_broker
@@ -48,8 +48,4 @@ services:
       - conf/.env
     volumes:
       - ./currency_checker:/app/currency_checker
-      - venv:/app/.venv
     command: ["poetry", "run", "python3", "-m", "currency_checker.scheduler.broker"]
-
-volumes:
-  venv:

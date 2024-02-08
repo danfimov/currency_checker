@@ -22,6 +22,7 @@ psycopg2-binary = "^2.9.9"
 dramatiq-apscheduler = "^0.2.1"
 asyncpg = "^0.29.0"
 starlette-exporter = "^0.20.0"
+gunicorn = "^21.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -36,6 +37,7 @@ types-pyyaml = "^6.0.12.12"
 types-psycopg2 = "^2.9.21.20240201"
 types-pyopenssl = "^24.0.0.20240130"
 types-requests = "^2.31.0.20240125"
+locust = "^2.22.0"
 
 
 [build-system]

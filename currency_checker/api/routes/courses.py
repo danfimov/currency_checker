@@ -23,7 +23,7 @@ async def courses_handler(
             'USDTERC-RUB',
             'USDTERC-USD',
         ]
-    ] = Query(default_factory=list),
+    ] = Query(..., default_factory=list),
 ) -> dict:
     if not directions:
         directions = [

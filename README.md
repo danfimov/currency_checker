@@ -82,3 +82,44 @@ API:
 ```yaml
 poetry run python3 -m currency_checker.api
 ```
+
+## Load testing
+
+### Local run
+
+First, I run locust load test on containers with application and databases. 
+For better API performance instead of running container with one uvicorn process, I used `gunicorn` with more workers:
+```bash
+poetry run gunicorn currency_checker.api.__main__:app --workers 8 --worker-class uvicorn.workers.UvicornWorker --bind [::]:8000"
+```
+
+I believe that this API can be used with other services. For simulating users (other services) behaviour I added three tasks:
+
+- request for currency rates from binance 
+- request for currency rates from coingeko
+- "ping" request for checking that service is alive (this request frequency is 100x lower than normal one)
+
+You can see results and graph below:
+
+```
+Type     Name                                                                          # reqs      # fails |    Avg     Min     Max    Med |   req/s  failures/s
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+GET      /ping                                                                           1738     0(0.00%) |      3       0      51      2 |   14.53        0.00
+GET      /v1/courses/?exchanger=binance                                                 86428     0(0.00%) |      5       1     201      4 |  722.50        0.00
+GET      /v1/courses/?exchanger=coingeko                                                85777     0(0.00%) |      5       1     169      4 |  717.06        0.00
+--------|----------------------------------------------------------------------------|-------|-------------|-------|-------|-------|-------|--------|-----------
+         Aggregated                                                                    173943     0(0.00%) |      5       0     201      4 | 1454.09        0.00
+
+Response time percentiles (approximated)
+Type     Name                                                                                  50%    66%    75%    80%    90%    95%    98%    99%  99.9% 99.99%   100% # reqs
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+GET      /ping                                                                                   2      3      4      5      8     12     21     31     50     52     52   1738
+GET      /v1/courses/?exchanger=binance                                                          4      5      6      6     10     17     27     37     88    160    200  86428
+GET      /v1/courses/?exchanger=coingeko                                                         4      5      6      6     10     17     27     38     88    150    170  85777
+--------|--------------------------------------------------------------------------------|--------|------|------|------|------|------|------|------|------|------|------|------
+         Aggregated                                                                              4      5      6      6     10     17     27     38     88    160    200 173943
+```
+
+![](assets/local_run.png)
+
+As you can see 95 percentile during load testing with 1500 RPS was somewhere below 20ms.
