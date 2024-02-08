@@ -39,6 +39,7 @@ API_METRICS_PORT=8001
 SCHEDULER_METRICS_PORT=8002
 BROKER_METRICS_PORT=8003
 ```
+It will enable metrics servers on this ports and you can collect it with any tool and create dashboards in Grafana.
 
 ## Before run
 
