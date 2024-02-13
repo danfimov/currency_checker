@@ -5,7 +5,13 @@ import dramatiq
 from dramatiq.brokers.redis import RedisBroker
 from dramatiq.middleware.asyncio import AsyncIO
 
-from currency_checker.domain.api_clients import AbstractCurrencyClient, BinanceApiClient, CoingekoApiClient
+from currency_checker.domain.exchange_clients import (
+    AbstractExchangeClient,
+    BinanceClient,
+    BinanceWebsocketClient,
+    CoingekoClient,
+)
+from currency_checker.domain.models import CurrenciesCoinbase, DirectionBinance
 from currency_checker.domain.services import AbstractCurrencyService, BinanceService, CoingekoService
 from currency_checker.domain.storages.currency import RedisCurrencyStorage
 from currency_checker.infrastructure.settings import Settings
@@ -26,7 +32,7 @@ dramatiq.set_broker(redis_broker)
 
 
 class Job(ABC):
-    def __init__(self, client: AbstractCurrencyClient, service: AbstractCurrencyService):
+    def __init__(self, client: AbstractExchangeClient, service: AbstractCurrencyService):
         self.client = client
         self.service = service
 
@@ -37,19 +43,50 @@ class Job(ABC):
 
 class CoingekoJob(Job):
     async def execute(self) -> None:
-        currency_rates = await self.client.get_price(
-            currencies=['bitcoin', 'ethereum', 'tether', 'tron'],
-            vs_currencies=['usd', 'rub'],
+        course_values = await self.client.get_price(
+            currencies=[
+                CurrenciesCoinbase.BITCOIN,
+                CurrenciesCoinbase.ETHEREUM,
+                CurrenciesCoinbase.TETHER,
+                CurrenciesCoinbase.TRON
+            ],
+            vs_currencies=[
+                CurrenciesCoinbase.USD,
+                CurrenciesCoinbase.RUB
+            ],
         )
-        await self.service.save_currency_rates(currency_rates)
+        await self.service.save_course_values(course_values)
 
 
 class BinanceJob(Job):
     async def execute(self) -> None:
         currency_rates = await self.client.get_price(
-            currency_pairs=["BTCUSDT", "BTCRUB", "TRXUSDT", "USDTRUB", "ETHRUB", "ETHUSDT"],
+            directions=[
+                DirectionBinance.BTC_USDT,
+                DirectionBinance.BTC_RUB,
+                DirectionBinance.TRX_USDT,
+                DirectionBinance.USDT_RUB,
+                DirectionBinance.ETH_RUB,
+                DirectionBinance.ETH_USDT,
+            ],
         )
-        await self.service.save_currency_rates(currency_rates)
+        for currency_rate in currency_rates:
+            await self.service.save_course_values(currency_rate)
+
+
+class BinanceWebsocketJob(Job):
+    async def execute(self) -> None:
+        async for currency_rate in self.client.get_price(
+            directions=[
+                DirectionBinance.BTC_USDT,
+                DirectionBinance.BTC_RUB,
+                DirectionBinance.TRX_USDT,
+                DirectionBinance.USDT_RUB,
+                DirectionBinance.ETH_RUB,
+                DirectionBinance.ETH_USDT,
+            ],
+        ):
+            await self.service.save_course_values(currency_rate)
 
 
 @dramatiq.actor
@@ -58,7 +95,7 @@ async def binance_get_currency_rates() -> None:
         service=BinanceService(
             RedisCurrencyStorage(settings.redis, 'binance')
         ),
-        client=BinanceApiClient()
+        client=BinanceClient()
     )
     logger.info('Job get_currency_rates started')
     await job.execute()
@@ -67,12 +104,26 @@ async def binance_get_currency_rates() -> None:
 
 
 @dramatiq.actor
+async def binance_get_currency_rates_by_websocket() -> None:
+    job = BinanceWebsocketJob(
+        service=BinanceService(
+            RedisCurrencyStorage(settings.redis, 'binance')
+        ),
+        client=BinanceWebsocketClient(),
+    )
+    logger.info('Job get_currency_rates started')
+    await job.execute()
+    logger.info('Job get_currency_rates ended')
+    binance_get_currency_rates_by_websocket.send()  # trigger same task after one will end with connection error etc.
+
+
+@dramatiq.actor
 async def coingeko_get_currency_rates(api_token: str) -> None:
     job = CoingekoJob(
         service=CoingekoService(
             RedisCurrencyStorage(settings.redis, 'coingeko')
         ),
-        client=CoingekoApiClient(api_token)
+        client=CoingekoClient(api_token)
     )
     logger.info('Job get_currency_rates started')
     await job.execute()

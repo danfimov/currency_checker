@@ -11,7 +11,11 @@ from currency_checker.domain.storages.accounts import AbstractAccountStorage, Po
 from currency_checker.infrastructure.logging import configure_logging
 from currency_checker.infrastructure.settings import Settings
 from currency_checker.scheduler.exceptions import ConfigurationException
-from currency_checker.scheduler.jobs import binance_get_currency_rates, coingeko_get_currency_rates
+from currency_checker.scheduler.jobs import (
+    binance_get_currency_rates,
+    binance_get_currency_rates_by_websocket,
+    coingeko_get_currency_rates,
+)
 from currency_checker.scheduler.utils import run_metrics_server
 
 
@@ -42,6 +46,10 @@ def scheduled_task_coingeko() -> None:
     coingeko_get_currency_rates.send(account.token)
 
 
+def scheduled_task_binance_by_websocket() -> None:
+    binance_get_currency_rates_by_websocket.send()
+
+
 if __name__ == "__main__":
     settings = Settings()
     configure_logging(
@@ -58,12 +66,20 @@ if __name__ == "__main__":
         )
     }
     scheduler = BlockingScheduler(jobstores=job_stores)
-    scheduler.add_job(
-        func=scheduled_task_binance,
-        trigger='interval',
-        seconds=settings.binance_scheduler.interval,
-        start_date=datetime.now()
-    )
+
+    if settings.enable_websocket_binance_client:
+        scheduler.add_job(
+            func=scheduled_task_binance_by_websocket,
+            trigger='date',
+            next_run_time=datetime.now()
+        )
+    else:
+        scheduler.add_job(
+            func=scheduled_task_binance,
+            trigger='interval',
+            seconds=settings.binance_scheduler.interval,
+            start_date=datetime.now()
+        )
 
     account_storage = PostgresAccountStorage(settings.postgres)
     asyncio.run(account_storage.cache_all_active_accounts('coingeko'))

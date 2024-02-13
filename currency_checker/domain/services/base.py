@@ -1,11 +1,14 @@
 from abc import ABC, abstractmethod
+from typing import Any
+
+from currency_checker.domain.models import Direction
 
 
 class AbstractCurrencyService(ABC):
     @abstractmethod
-    async def get_currency_rate(self, currency: str) -> float:
+    async def get_course_value(self, direction: Direction) -> float:
         ...
 
     @abstractmethod
-    async def save_currency_rates(self, currency_rates: dict) -> None:
+    async def save_course_values(self, course_values: Any) -> None:
         ...
