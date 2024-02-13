@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     scheduler_metrics_port: int | None = None
     broker_metrics_port: int | None = None
 
+    enable_websocket_binance_client: bool = True
+
     class Config:
         env_file_encoding = 'utf-8'
         env_file = getenv('ENV_PATH', 'conf/.env')

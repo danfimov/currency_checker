@@ -23,7 +23,6 @@ class AbstractAccountStorage(ABC):
 class PostgresAccountStorage(AbstractAccountStorage):
     def __init__(self, postgres_settings: PostgresSettings) -> None:
         dsn = f'postgresql+asyncpg://{postgres_settings.user}:{postgres_settings.password}@{postgres_settings.host}:{postgres_settings.port}/{postgres_settings.database}'
-        print('DSN: ', dsn)
         self._engine: AsyncEngine = create_async_engine(
             dsn,
             echo=False,
