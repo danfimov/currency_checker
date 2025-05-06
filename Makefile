@@ -4,75 +4,91 @@ ifeq ($(wildcard "conf/.env"),)
 	include conf/.env
 endif
 
-APPLICATION_NAME = currency_checker
+.DEFAULT:
+	@echo "No such command (or you pass two or many targets to ). List of possible commands: make help"
 
-HELP_FUN = \
-	%help; while(<>){push@{$$help{$$2//'options'}},[$$1,$$3] \
-	if/^([\w-_]+)\s*:.*\#\#(?:@(\w+))?\s(.*)$$/}; \
-    print"$$_:\n", map"  $$_->[0]".(" "x(20-length($$_->[0])))."$$_->[1]\n",\
-    @{$$help{$$_}},"\n" for keys %help; \
+.DEFAULT_GOAL := help
 
-CODE = currency_checker
-TEST = poetry run python3 -m pytest --verbosity=2 --showlocals --log-level=DEBUG
+##@ Help
 
-ifndef args
-MESSAGE = "No such command (or you pass two or many targets to ). List of possible commands: make help"
-else
-MESSAGE = "Done"
-endif
+.PHONY: help
+help: ## Show this help
+	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target> <arg=value>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m  %s\033[0m\n\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
+##@ Local development
 
-help: ##@Help Show this help
-	@echo -e "Usage: make [target] ...\n"
-	@perl -e '$(HELP_FUN)' $(MAKEFILE_LIST)
-
-install:  ##@Setup Install project requirements
+.PHONY: install
+install: ## Install project requirements
 	python3 -m pip install poetry
 	poetry install
 
-run_api:  ##@Application Run api
+.PHONY: run_api
+run_api: ## Run api
 	poetry run python3 -m currency_checker.api
 
-run_scheduler:  ##@Application Run scheduler
+.PHONY: run_scheduler
+run_scheduler: ## Run scheduler
 	poetry run python3 -m currency_checker.scheduler
-run_worker:  ##@Application Run workers
+
+.PHONY: run_worker
+run_worker: ## Run workers
 	poetry run python3 -m currency_checker.scheduler.broker
 
-up:  ##@AApplication Create databases and app containers with docker-compose
+.PHONY: up
+up: ## Create databases and app containers with docker-compose
 	docker-compose -f docker-compose.yml up -d --remove-orphans
 
-migrate:  ##@Database Create database with docker-compose
+##@ Database
+
+.PHONY: migrate
+migrate: ## Create database with docker-compose
 	cd currency_checker/infrastructure/migrations && poetry run alembic upgrade head
 
-revision:  ##@Database Create database with docker-compose
+.PHONY: revision
+revision: ## Create database with docker-compose
 	cd currency_checker/infrastructure/migrations && poetry run alembic revision --autogenerate --message $(args)
 
-test:  ##@Testing Test application with pytest
-	make db && $(TEST)
+##@ Code Quality
 
-test-cov:  ##@Testing Test application with pytest and create coverage report
-	make db && $(TEST) --cov=$(APPLICATION_NAME) --cov-report html --cov-fail-under=70
+.PHONY: test
+test: ## Test app with pytest
+	make db && poetry run python3 -m pytest --verbosity=2 --showlocals --log-level=DEBUG
 
-lint:  ##@Code Check code with pylint
-	poetry run python3 -m ruff $(CODE) tests
-	poetry run python3 -m mypy $(CODE)
+.PHONY: test-cov
+test-cov: ## Test app with pytest and create coverage report
+	make db && poetry run python3 -m pytest --verbosity=2 --showlocals --log-level=DEBUG --cov=currency_checker --cov-report html --cov-fail-under=70
 
-format:  ##@Code Reformat code with ruff and black
-	poetry run python3 -m ruff $(CODE) tests --fix
+.PHONY: lint
+lint: ## Check code with pylint
+	poetry run python3 -m ruff check currency_checker tests
+	poetry run python3 -m mypy currency_checker
 
-clean:  ##@Code Clean directory from garbage files
+.PHONY: format
+format: ## Reformat code with ruff and black
+	poetry run python3 -m ruff format currency_checker tests
+
+.PHONY: clean
+clean: ## Clean directory from garbage files
 	rm -fr *.egg-info dist
 
-build:  ##@Docker Build docker container with bot
+##@ Docker
+
+.PHONY: build
+build: ## Build docker container with bot
 	docker build  --platform linux/amd64 -f Dockerfile -t currency_checker:latest .
 
-tag:  ##@Docker Create tag on local bot container
+.PHONY: tag
+tag: ## Create tag on local bot container
 	docker tag currency_checker cr.yandex/$(CLOUD__REGISTRY_ID)/currency_checker:latest
 
-push:  ##@Docker Push container with bot to registry
+.PHONY: push
+push: ## Push container with bot to registry
 	docker push cr.yandex/$(CLOUD__REGISTRY_ID)/currency_checker:latest
 
-deploy:  ##@Deploy Create vm with docker-compose (change to your credentials first)
+##@ Deploy
+
+.PHONY: deploy
+deploy: ## Create vm with docker-compose (change to your credentials first)
 	yc compute instance create-with-container \
   --name currency_checker-vm \
   --zone ru-central1-a \
@@ -81,6 +97,3 @@ deploy:  ##@Deploy Create vm with docker-compose (change to your credentials fir
   --network-interface subnet-name=defult-ru-central1-a,nat-ip-version=ipv4 \
   --service-account-name $(CLOUD__ACCOUNT_NAME) \
   --docker-compose-file docker-compose.cloud.yaml
-
-%::
-	echo $(MESSAGE)

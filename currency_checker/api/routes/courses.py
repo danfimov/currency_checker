@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query, Request
 
-from currency_checker.api.models import CoursesResponse
+from currency_checker.api.models import Course, CoursesResponse
 from currency_checker.domain.models import Direction, Exchanger
 from currency_checker.domain.services import BinanceService, CoingekoService
 
@@ -38,9 +38,9 @@ async def courses_handler(
     return CoursesResponse(
         exchanger=exchanger,
         courses=[
-            {
-                "direction": direction,
-                "value": result[direction]
-            } for direction in directions
+            Course(
+                direction=direction,
+                value=result[direction]
+            ) for direction in directions
         ]
     )
