@@ -60,12 +60,12 @@ test-cov: ## Test app with pytest and create coverage report
 
 .PHONY: lint
 lint: ## Check code with pylint
-	poetry run python3 -m ruff $(CODE) tests
-	poetry run python3 -m mypy $(CODE)
+	poetry run python3 -m ruff check currency_checker tests
+	poetry run python3 -m mypy currency_checker
 
 .PHONY: format
 format: ## Reformat code with ruff and black
-	poetry run python3 -m ruff $(CODE) tests --fix
+	poetry run python3 -m ruff format currency_checker tests
 
 .PHONY: clean
 clean: ## Clean directory from garbage files
