@@ -1,5 +1,8 @@
 # Currency checker
 
+> [!NOTE]
+> This repo contains solution to a test task when applying for a job. I did it for one evening, so it's not production ready, actively maintained etc. Please use code from here with caution.
+
 Project have two parts:
 
 - API for getting cryptocurrency rate in RUB and USD 
